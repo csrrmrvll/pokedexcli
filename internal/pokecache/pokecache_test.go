@@ -1,5 +1,4 @@
 package pokecache
-package pokecache
 
 import (
 	"fmt"
