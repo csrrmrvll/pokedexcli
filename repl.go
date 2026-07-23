@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/csrrmrvll/pokedexcli/internal/pokeapi"
 )
 
-func startRepl() {
-	fmt.Println("Welcome to the Pokedex!")
+type config struct {
+	pokeapiClient    pokeapi.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
+}
+
+func startRepl(cfg *config) {
 	reader := bufio.NewScanner(os.Stdin)
-	config := config{
-		previous: 1,
-		next:     1,
-	}
 	for {
 		fmt.Print("Pokedex > ")
 		reader.Scan()
@@ -25,13 +28,16 @@ func startRepl() {
 
 		commandName := words[0]
 
-		if command, ok := getCommands()[commandName]; ok {
-			err := command.callback(&config)
+		command, exists := getCommands()[commandName]
+		if exists {
+			err := command.callback(cfg)
 			if err != nil {
-				fmt.Printf("Error executing command '%s': %v\n", commandName, err)
+				fmt.Println(err)
 			}
+			continue
 		} else {
-			fmt.Printf("Unknown command: '%s'\n", commandName)
+			fmt.Println("Unknown command")
+			continue
 		}
 	}
 }
@@ -45,16 +51,11 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config) error
+	callback    func(*config) error
 }
 
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
-		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
-		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -62,18 +63,18 @@ func getCommands() map[string]cliCommand {
 		},
 		"map": {
 			name:        "map",
-			description: "Displays next 20 location areas",
-			callback:    commandMap,
+			description: "Get the next page of locations",
+			callback:    commandMapf,
 		},
 		"mapb": {
 			name:        "mapb",
-			description: "Displays back 20 location areas",
-			callback:    commandMapB,
+			description: "Get the previous page of locations",
+			callback:    commandMapb,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
 		},
 	}
-}
-
-type config struct {
-	previous int
-	next     int
 }
