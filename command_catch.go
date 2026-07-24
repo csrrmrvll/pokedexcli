@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 func commandCatch(cfg *config, args ...string) error {
@@ -13,18 +12,21 @@ func commandCatch(cfg *config, args ...string) error {
 	}
 
 	name := args[0]
-	fmt.Printf("Throwing a Pokeball at %s...\n", name)
 	pokemon, err := cfg.pokeapiClient.GetPokemon(name)
 	if err != nil {
 		return err
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	catchChance := 0.5 * float64(pokemon.BaseExperience) // chance to catch the Pokemon
-	if rand.Float64() > catchChance {
+	res := rand.Intn(pokemon.BaseExperience)
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon.Name)
+	if res > 40 {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
 		return nil
 	}
-	fmt.Printf("%s was Caught!\n", pokemon.Name)
+
+	fmt.Printf("%s was caught!\n", pokemon.Name)
+
+	cfg.caughtPokemon[pokemon.Name] = pokemon
 	return nil
 }
